@@ -1,72 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta charset="UTF-8">
-<meta name="authoring-tool" content="Adobe_Animate_CC">
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>app</title>
-<style>
-  #animation_container, #_preload_div_ {
-    position:absolute;
-    margin:auto;
-    left:0;right:0;
-    top:0;bottom:0;
-  }
-</style>
-<script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
-<script src="https://code.createjs.com/1.0.0/AdobeAn.min.js"></script>
-<script src="app.js"></script>
-<script>
-var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
-function init() {
-  canvas = document.getElementById("canvas");
-  anim_container = document.getElementById("animation_container");
-  dom_overlay_container = document.getElementById("dom_overlay_container");
-  var comp=AdobeAn.getComposition("3F3B2C284352F34A9CD6A5D9B35BB9D4");
-  var lib=comp.getLibrary();
-  var loader = new createjs.LoadQueue(false);
-  loader.addEventListener("fileload", function(evt){handleFileLoad(evt,comp)});
-  loader.addEventListener("complete", function(evt){handleComplete(evt,comp)});
-  loader.loadManifest(lib.properties.manifest);
-}
-function handleFileLoad(evt, comp) {
-  var images=comp.getImages();
-  if (evt && (evt.item.type == "image")) { images[evt.item.id] = evt.result; }
-}
-function handleComplete(evt,comp) {
-  var lib=comp.getLibrary();
-  var ss=comp.getSpriteSheet();
-  var queue = evt.target;
-  var ssMetadata = lib.ssMetadata;
-  for(var i=0; i<ssMetadata.length; i++) {
-    ss[ssMetadata[i].name] = new createjs.SpriteSheet({"images":[queue.getResult(ssMetadata[i].name)],"frames":ssMetadata[i].frames});
-  }
-  var preloaderDiv = document.getElementById("_preload_div_");
-  preloaderDiv.style.display = 'none';
-  canvas.style.display = 'block';
-  exportRoot = new lib.app();
-  stage = new lib.Stage(canvas);
-  stage.enableMouseOver();
-  fnStartAnimation = function() {
-    stage.addChild(exportRoot);
-    createjs.Ticker.framerate = lib.properties.fps;
-    createjs.Ticker.addEventListener("tick", stage);
-  }
-  AdobeAn.makeResponsive(true,'both',true,1,[canvas,preloaderDiv,anim_container,dom_overlay_container]);
-  AdobeAn.compositionLoaded(lib.properties.id);
-  fnStartAnimation();
-}
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="authoring-tool" content="Adobe_Animate_CC">
+  <title>app</title>
+  <style>
+    /* リセットとレイアウトの基本 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #fff;
+    }
+
+    /* 画面中央に配置しつつ、スマホ幅にフィット */
+    #animation_container,
+    #_preload_div_ {
+      position: absolute;
+      inset: 0; /* top:0; right:0; bottom:0; left:0 の省略 */
+      margin: auto;
+    }
+
+    /* コンテナの最大幅を制御（スマホ上限。必要に応じて調整） */
+    #animation_container {
+      width: 100vw;
+      max-width: 480px;   /* スマホ想定の上限。端末に合わせて390〜480で調整可 */
+      height: 100%;
+      max-height: 100%;
+      overflow: hidden;
+      background-color: rgba(255, 255, 255, 1);
+    }
+
+    /* キャンバスとDOMオーバーレイをコンテナにフィットさせる */
+    #canvas,
+    #dom_overlay_container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100% !important;   /* 固定pxを無効化してフィット */
+      height: auto !important;  /* 縦はアスペクト維持で伸縮（AdobeAn側で制御されます） */
+      display: none;
+      background-color: rgba(255, 255, 255, 1);
+    }
+
+    /* プリロード表示が画面に収まるように */
+    #_preload_div_ {
+      display: inline-block;
+      width: 100vw;
+      max-width: 480px;
+      height: 100vh;
+      text-align: center;
+    }
+    #_preload_div_ span {
+      display: inline-block;
+      height: 100%;
+      vertical-align: middle;
+    }
+    #_preload_div_ img {
+      vertical-align: middle;
+      max-width: 60%;
+      height: auto;
+    }
+
+    /* 回転時のはみ出し対策 */
+    @media (min-width: 768px) {
+      #animation_container,
+      #_preload_div_ {
+        max-width: 720px; /* タブレット以上のときの上限。任意 */
+      }
+    }
+  </style>
+
+  <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+  <script src="https://code.createjs.com/1.0.0/AdobeAn.min.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+    var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
+
+    function init() {
+      canvas = document.getElementById("canvas");
+      anim_container = document.getElementById("animation_container");
+      dom_overlay_container = document.getElementById("dom_overlay_container");
+
+      var comp = AdobeAn.getComposition("3F3B2C284352F34A9CD6A5D9B35BB9D4");
+      var lib = comp.getLibrary();
+      var loader = new createjs.LoadQueue(false);
+      loader.addEventListener("fileload", function(evt){ handleFileLoad(evt, comp); });
+      loader.addEventListener("complete", function(evt){ handleComplete(evt, comp); });
+      loader.loadManifest(lib.properties.manifest);
+    }
+
+    function handleFileLoad(evt, comp) {
+      var images = comp.getImages();
+      if (evt && (evt.item.type === "image")) { images[evt.item.id] = evt.result; }
+    }
+
+    function handleComplete(evt, comp) {
+      var lib = comp.getLibrary();
+      var ss = comp.getSpriteSheet();
+      var queue = evt.target;
+      var ssMetadata = lib.ssMetadata;
+
+      for (var i = 0; i < ssMetadata.length; i++) {
+        ss[ssMetadata[i].name] = new createjs.SpriteSheet({
+          "images": [queue.getResult(ssMetadata[i].name)],
+          "frames": ssMetadata[i].frames
+        });
+      }
+
+      var preloaderDiv = document.getElementById("_preload_div_");
+      preloaderDiv.style.display = 'none';
+      canvas.style.display = 'block';
+
+      exportRoot = new lib.app();
+      stage = new lib.Stage(canvas);
+      stage.enableMouseOver();
+
+      fnStartAnimation = function() {
+        stage.addChild(exportRoot);
+        createjs.Ticker.framerate = lib.properties.fps;
+        createjs.Ticker.addEventListener("tick", stage);
+      };
+
+      /* Adobe Animate のレスポンシブ設定
+         第1引数: isResponsive
+         第2引数: responsiveDimension ('width' | 'height' | 'both')
+         第3引数: isScale
+         第4引数: scaleType (1=fit, 2=cover)
+         第5引数: domContainers
+      */
+      AdobeAn.makeResponsive(true, 'both', true, 1, [canvas, preloaderDiv, anim_container, dom_overlay_container]);
+
+      AdobeAn.compositionLoaded(lib.properties.id);
+      fnStartAnimation();
+    }
+  </script>
 </head>
-<body onload="init();" style="margin:0px;">
-  <div id="animation_container" style="background-color:rgba(255, 255, 255, 1.00); width:1080px; height:8000px">
-    <canvas id="canvas" width="1080" height="8000" style="position: absolute; display: none; background-color:rgba(255, 255, 255, 1.00);"></canvas>
-    <div id="dom_overlay_container" style="pointer-events:none; overflow:hidden; width:1080px; height:8000px; position: absolute; left: 0px; top: 0px; display: none;"></div>
+
+<body onload="init();">
+  <div id="animation_container">
+    <canvas id="canvas"></canvas>
+    <div id="dom_overlay_container" style="pointer-events:none; overflow:hidden;"></div>
   </div>
-  <div id="_preload_div_" style="position:absolute; top:0; left:0; display:inline-block; height:8000px; width:1080px; text-align:center;">
-    <span style="display:inline-block; height:100%; vertical-align:middle;"></span>
-    <img src="images/_preloader.gif" style="vertical-align: middle; max-height: 100%"/>
+
+  <div id="_preload_div_">
+    <span></span>
+    <img src="images/_preloader.gif" alt="loading">
   </div>
 </body>
 </html>
