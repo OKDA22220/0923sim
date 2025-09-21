@@ -222,7 +222,7 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/sim_page1.png", id:"sim_page1"},
+		{src:"images/sim_page1@2x.png", id:"sim_page1"}
 		{src:"images/sim_page2.png", id:"sim_page2"},
 		{src:"images/sim_page3.png", id:"sim_page3"}
 	],
